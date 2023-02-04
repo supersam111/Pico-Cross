@@ -1,5 +1,7 @@
 package;
 
+import flixel.system.FlxSound;
+import flixel.tile.FlxTilemap;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.addons.transition.FlxTransitionableState;
@@ -27,6 +29,7 @@ class PlayState extends FlxTransitionableState
 
 	var musicBtn:FlxButton;
 	var fullBtn:FlxButton;
+	var winBool:Bool = false;
 
 	// Background (very important)
 	var background:Array<FlxSprite>;
@@ -49,7 +52,10 @@ class PlayState extends FlxTransitionableState
 	var bA:Int; // stands for board Area
 	var boardX:Int = 10;
 	var boardY:Int = 10;
+	var numberLeft:Array<FlxText>;
+	var numberTop:Array<FlxText>;
 
+	// var mainTheme:FlxSound;
 	// Upper right hand corner buttons
 	var setBtn:FlxButton;
 	var fillBtn:FlxButton;
@@ -59,6 +65,7 @@ class PlayState extends FlxTransitionableState
 	var clickedAnim:Array<String>;
 	var clickType:Int = 2;
 	var resetBtn:FlxButton;
+	var backBtn:FlxButton;
 
 	// Tile Sprite Array
 	var tileSprites:Array<FlxSprite>;
@@ -68,24 +75,24 @@ class PlayState extends FlxTransitionableState
 	var optionsFrame:FlxSprite;
 
 	var boardState:Array<Int> = [
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 	]; // Used to check each tile state
 
 	var boardSolution:Array<Int>; // The board solution
 
 	// Box in the upper left to show progress
 	var previewBox:Array<FlxSprite>;
-	var previewX:Int = 8;
-	var previewY:Int = 8;
+	var previewX:Int = 6;
+	var previewY:Int = 6;
 
 	// Image Zoom substate
 	var persistentSubState:SubState;
@@ -94,7 +101,9 @@ class PlayState extends FlxTransitionableState
 	override public function create():Void
 	{
 		tileOffset += frameOffset;
-		FlxG.sound.playMusic(AssetPaths.Pico_Cross_Theme__mp3);
+		// mainTheme = new FlxSound();
+		// mainTheme.loadEmbedded(AssetPaths.Pico_Cross_Theme__mp3, false);
+		// mainTheme.play(false, ArtArrays.soundTime);
 
 		// Background
 		background = new Array<FlxSprite>();
@@ -114,48 +123,48 @@ class PlayState extends FlxTransitionableState
 		}
 
 		// Frame of the game
-		gameFrame = new FlxSprite(frameOffset, frameOffset);
+		gameFrame = new FlxSprite(0, 0);
 		gameFrame.loadGraphic(AssetPaths.gameFrame__png);
 		add(gameFrame);
 		optionsFrame = new FlxSprite(0, FlxG.height - 42);
 		optionsFrame.loadGraphic(AssetPaths.options__png);
 		add(optionsFrame);
 
-		previewBox = new Array<FlxSprite>();
 		boardSolution = ArtArrays.boardSolutions[ArtArrays.level];
-		// Board solution move
-		for (i in 0...boardSolution.length)
+		if (ArtArrays.winRecord[ArtArrays.level] == 1)
 		{
-			boardSolution[i] += 1;
-			boardState[i] += 1;
+			for (i in 0...boardState.length)
+				boardState[i] = boardSolution[i];
 		}
+		// Board solution move
+		// boardState = ArtArrays.savedBoards[ArtArrays.level];
+
+		// preview box
+		previewBox = new Array<FlxSprite>();
 
 		// Load art into correct squares
 		artNameArray = new Array<String>();
-		artNameArray = ArtArrays.artNames;
+		artNameArray = ArtArrays.imageNames;
 		aM = 0; // Indexer for Art arrays
 		artArray = new Array<FlxSprite>();
+
 		for (i in 0...boardY)
 		{
 			for (j in 0...boardX)
 			{
-				bA = i + (boardX * j);
+				bA = j + (boardX * i);
 				if (boardSolution[bA] == 2)
 				{
 					artArray[aM] = new FlxSprite(0, 0);
 					artArray[aM].loadGraphic("assets/images/ArtSubs/" + artNameArray[aM] + ".png");
 					artArray[aM].scale.set(TILE_WIDTH / artArray[aM].width, (TILE_HEIGHT / artArray[aM].height));
 					artArray[aM].updateHitbox();
-					artArray[aM].x = i * TILE_WIDTH + tileOffset;
-					artArray[aM].y = j * TILE_WIDTH + tileOffset;
+					artArray[aM].x = j * TILE_WIDTH + tileOffset;
+					artArray[aM].y = i * TILE_WIDTH + tileOffset;
 					add(artArray[aM]);
-					artArray[aM].kill();
+					artArray[aM].alpha = 0;
 					aM += 1;
 				}
-
-				previewBox[bA] = new FlxSprite(10 + (i * previewX), 10 + (j * previewX));
-				previewBox[bA].makeGraphic(previewX, previewY, FlxColor.fromString("#ffffff"));
-				add(previewBox[bA]);
 			}
 		}
 
@@ -187,6 +196,14 @@ class PlayState extends FlxTransitionableState
 				tileSprites[bA].animation.add("fTileCH", [13]);
 				tileSprites[bA].animation.add("xTileCH", [14]);
 				tileSprites[bA].animation.add("dTileCH", [15]);
+
+				// preview box
+				previewBox[bA] = new FlxSprite(44 + (i * previewX), 44 + (j * previewY));
+				previewBox[bA].loadGraphic(AssetPaths.previewTiles__png, true, previewX, previewY);
+				previewBox[bA].animation.add("white", [1], 10, true);
+				previewBox[bA].animation.add("black", [2], 10, true);
+
+				add(previewBox[bA]);
 			}
 		}
 
@@ -200,7 +217,7 @@ class PlayState extends FlxTransitionableState
 		highlightBox = new FlxSprite(130 + frameOffset, 130 + frameOffset);
 		highlightBox.loadGraphic(AssetPaths.singleFrame__png);
 		add(highlightBox);
-		highlightNumRow = new FlxSprite(55 + frameOffset, 115 + frameOffset);
+		highlightNumRow = new FlxSprite(59 + frameOffset, 111 + frameOffset);
 		highlightNumRow.loadGraphic(AssetPaths.numberboxHighlight__png);
 		highlightNumRow.angle = 90;
 		highlightNumRow.updateHitbox();
@@ -210,10 +227,33 @@ class PlayState extends FlxTransitionableState
 		add(highlightNumCol);
 
 		// Game number stuff
-		gameNumbers = new FlxSprite(frameOffset, frameOffset);
-		gameNumbers.loadGraphic(AssetPaths.gameNumbers__png);
-		add(gameNumbers);
+		numberLeft = new Array<FlxText>();
+		for (i in 0...10)
+		{
+			for (j in 0...5)
+			{
+				bA = j + (5 * i);
+				numberLeft[bA] = new FlxText(57 + (j * 17), 177 + (i * 54), -1, Std.string(ArtArrays.gameNumbersLeft[ArtArrays.level][bA]));
+				add(numberLeft[bA]);
+				numberLeft[bA].setFormat(AssetPaths.NewgroundsFont_Regular__otf, 16, FlxColor.fromString("#12101c"));
+				if (ArtArrays.gameNumbersLeft[ArtArrays.level][bA] == 0)
+					numberLeft[bA].kill();
+			}
+		}
+		numberTop = new Array<FlxText>();
+		for (i in 0...10)
+		{
+			for (j in 0...5)
+			{
+				bA = i + (10 * j);
+				numberTop[bA] = new FlxText(179 + (i * 54), 56 + (j * 17), -1, Std.string(ArtArrays.gameNumbersTop[ArtArrays.level][bA]));
+				add(numberTop[bA]);
+				numberTop[bA].setFormat(AssetPaths.NewgroundsFont_Regular__otf, 16, FlxColor.fromString("#12101c"));
 
+				if (ArtArrays.gameNumbersTop[ArtArrays.level][bA] == 0)
+					numberTop[bA].kill();
+			}
+		}
 		// Buttons
 		setBtn = new FlxButton(10 + frameOffset, 10 + frameOffset, "", setClick);
 		setBtn.loadGraphic(AssetPaths.setBtn__png, true, 52, 52);
@@ -234,15 +274,24 @@ class PlayState extends FlxTransitionableState
 		clickedAnim = new Array<String>();
 		clickedAnim = ["pressed", "pressed", "highlight"];
 		fillClick();
+		backBtn = new FlxButton(7, 7, "", onMenu);
+		backBtn.loadGraphic(AssetPaths.backBtn__png, true, 30, 30);
+		add(backBtn);
 
 		// Bottom buttons
-		musicBtn = new FlxButton(11, 459 + 253, "", onMute);
-		musicBtn.loadGraphic(AssetPaths.sound1__png, true, 30, 30);
+		musicBtn = new FlxButton(11, 469 + 253, "", onMute);
+		if (ArtArrays.musicVol == 1)
+			musicBtn.loadGraphic(AssetPaths.sound1__png, true, 30, 30);
+		else
+			musicBtn.loadGraphic(AssetPaths.sound2__png, true, 30, 30);
 		add(musicBtn);
-		fullBtn = new FlxButton(55, 459 + 253, "", onFull);
-		fullBtn.loadGraphic(AssetPaths.fullscreen1__png, true, 30, 30);
+		fullBtn = new FlxButton(55, 469 + 253, "", onFull);
+		if (!FlxG.fullscreen)
+			fullBtn.loadGraphic(AssetPaths.fullscreen1__png, true, 30, 30);
+		else
+			fullBtn.loadGraphic(AssetPaths.fullscreen2__png, true, 30, 30);
 		add(fullBtn);
-		resetBtn = new FlxButton(350 + gameFrame.x, 685 + gameFrame.y, "Reset", resetBoard);
+		resetBtn = new FlxButton(350 + frameOffset, 685 + frameOffset, "Reset", resetBoard);
 		resetBtn.loadGraphic(AssetPaths.reset__png, true, 104, 19);
 		resetBtn.label.setFormat(AssetPaths.NewgroundsFont_Regular__otf);
 		resetBtn.label.size = 16;
@@ -266,18 +315,14 @@ class PlayState extends FlxTransitionableState
 		colCheck();
 		previewUpdate();
 		highlightTiles();
+		tileSpriteUpdate();
 	}
 
 	override public function update(elapsed:Float):Void
 	{
 		buttonToKey();
 
-		if (FlxG.keys.justPressed.R) // Get this to work
-		{
-			onMenu();
-		}
-
-		if (FlxG.mouse.justPressed)
+		if (FlxG.mouse.justReleased)
 		{
 			// FlxG.sound.play(AssetPaths.button_push__mp3);
 			unHighlightTiles();
@@ -286,7 +331,7 @@ class PlayState extends FlxTransitionableState
 			{
 				if ((Math.floor((FlxG.mouse.x - tileOffset) / TILE_WIDTH) * TILE_WIDTH + tileOffset == artArray[aM].x)
 					&& (Math.floor((FlxG.mouse.y - tileOffset) / TILE_HEIGHT) * TILE_HEIGHT + tileOffset == artArray[aM].y)
-					&& (artArray[aM].alive))
+					&& (artArray[aM].alpha == 1))
 				{
 					notZoomed = false;
 					ArtArrays.aM = aM;
@@ -370,7 +415,7 @@ class PlayState extends FlxTransitionableState
 					{
 						if ((tileSprites[bA].x == artArray[aM].x) && (tileSprites[bA].y == artArray[aM].y))
 						{
-							artArray[aM].revive();
+							artArray[aM].alpha = 1;
 							boardState[bA] = 6;
 						}
 					}
@@ -418,7 +463,7 @@ class PlayState extends FlxTransitionableState
 					{
 						if ((tileSprites[bA].x == artArray[aM].x) && (tileSprites[bA].y == artArray[aM].y))
 						{
-							artArray[aM].revive();
+							artArray[aM].alpha = 1;
 							boardState[bA] = 6;
 						}
 					}
@@ -493,7 +538,7 @@ class PlayState extends FlxTransitionableState
 				highlightCol.x = highlightBox.x + 1;
 				highlightRow.y = highlightBox.y + 1;
 				highlightNumCol.x = highlightBox.x + 14;
-				highlightNumRow.y = highlightBox.y - 16;
+				highlightNumRow.y = highlightBox.y - 19;
 			}
 		}
 	}
@@ -585,9 +630,10 @@ class PlayState extends FlxTransitionableState
 		tileSpriteUpdate();
 		for (aM in 0...artArray.length)
 		{
-			artArray[aM].kill();
+			artArray[aM].alpha = 0;
 		}
 		previewUpdate();
+		ArtArrays.winRecord[ArtArrays.level] = 0;
 	}
 
 	function buttonToKey()
@@ -612,25 +658,34 @@ class PlayState extends FlxTransitionableState
 				lineCounter += 1;
 			}
 		}
-		if (lineCounter == 0)
+		if (lineCounter == 0 && !winBool)
 		{
 			winText.text = "You win!";
-			NGio.unlockMedal(69157);
+			NGio.unlockMedal(69249);
 			ArtArrays.winRecord[ArtArrays.level] = 1;
+			winBool = true;
+			var winSubState:WinSubState = new WinSubState(0x99808080);
+			openSubState(winSubState);
+			FlxG.save.data.winRecord = ArtArrays.winRecord;
+			FlxG.save.flush();
 		}
 	}
 
 	function previewUpdate()
 	{
-		for (i in 0...previewBox.length)
+		for (i in 0...boardX)
 		{
-			if ((previewBox[i].color == FlxColor.fromString("#ffffff")) && ((boardState[i] == 2) || (boardState[i] == 6)))
+			for (j in 0...boardY)
 			{
-				previewBox[i].color = FlxColor.fromString("#10121c");
-			}
-			else if (previewBox[i].color == FlxColor.fromString("#10121c"))
-			{
-				previewBox[i].color = FlxColor.fromString("#ffffff");
+				bA = i + (boardX * j);
+				if (((boardState[bA] == 2) || (boardState[bA] == 6)))
+				{
+					previewBox[bA].animation.play("black");
+				}
+				else
+				{
+					previewBox[bA].animation.play("white");
+				}
 			}
 		}
 	}
@@ -648,7 +703,7 @@ class PlayState extends FlxTransitionableState
 			musicBtn.loadGraphic(AssetPaths.sound1__png, true, 30, 30);
 		}
 
-		FlxG.sound.playMusic(AssetPaths.Pico_Cross_Theme__mp3, ArtArrays.musicVol, true);
+		InitState.mainTheme.volume = ArtArrays.musicVol;
 	}
 
 	function onFull()
@@ -668,5 +723,17 @@ class PlayState extends FlxTransitionableState
 	function onMenu()
 	{
 		FlxG.switchState(new MenuState());
+	}
+
+	function startHighlight()
+	{
+		for (i in 0...boardX)
+		{
+			boardState[i] += 8;
+		}
+		for (i in 1...boardY)
+		{
+			boardState[10 * i] += 8;
+		}
 	}
 }

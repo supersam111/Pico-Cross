@@ -24,6 +24,7 @@ class SubState extends FlxSubState
 	var downKey:Bool;
 	var leftKey:Bool;
 	var rightKey:Bool;
+	var backFrame:FlxSprite;
 
 	// just a helper flag, showing if this substate is persistent or not
 	public var isPersistent:Bool = false;
@@ -36,7 +37,7 @@ class SubState extends FlxSubState
 		super.create();
 
 		zoomArt = new FlxSprite(16, 16);
-		zoomArt.loadGraphic("assets/images/ArtSubs/" + ArtArrays.artNames[ArtArrays.aM] + ".png");
+		zoomArt.loadGraphic("assets/images/ArtSubs/" + ArtArrays.imageNames[ArtArrays.aM] + ".png");
 		actualWidth = zoomArt.width;
 		actualHeight = zoomArt.height;
 		zoomArt.scale.set(FlxG.width / zoomArt.width, FlxG.width / zoomArt.width);
@@ -45,15 +46,21 @@ class SubState extends FlxSubState
 		zoomArt.x = 0.5 * (FlxG.width - zoomArt.width);
 		zoomArt.y = 0.5 * (FlxG.height - zoomArt.height);
 
-		closeBtn = new FlxButton(16, 16, "Close", onClick);
+		backFrame = new FlxSprite(0, 0);
+		backFrame.loadGraphic(AssetPaths.backThing__png);
+		add(backFrame);
+
+		closeBtn = new FlxButton(7, 7, "", onClick);
+		closeBtn.loadGraphic(AssetPaths.backBtn__png, true, 30, 30);
 		add(closeBtn);
 
 		linkBtn = new FlxButton(FlxG.width * 0.5
 			- 100, FlxG.height * 0.75,
-			"Art by: "
+			ArtArrays.characterNames[ArtArrays.aM]
+			+ " by: "
 			+ ArtArrays.artists[ArtArrays.aM]
 			+ "\nClick here to visit their NG page!", linkClick);
-		linkBtn.makeGraphic(300, 50, FlxColor.BLACK);
+		linkBtn.makeGraphic(300, 70, FlxColor.fromString("#12101c"));
 		linkBtn.alpha = .8;
 		add(linkBtn);
 		linkBtn.label.color = FlxColor.WHITE;
@@ -88,7 +95,7 @@ class SubState extends FlxSubState
 
 	function linkClick()
 	{
-		FlxG.openURL(ArtArrays.artists[ArtArrays.aM] + ".newgrounds.com");
+		FlxG.openURL(ArtArrays.linkNames[ArtArrays.aM]);
 	}
 
 	// This function will be called by substate right after substate will be closed
@@ -160,6 +167,7 @@ class SubState extends FlxSubState
 			}
 			zoomArt.updateHitbox();
 			zoomArt.setPosition(centerX - (0.5 * zoomArt.width), centerY - (0.5 * zoomArt.height));
+			zoomArt.updateHitbox();
 		}
 	}
 }

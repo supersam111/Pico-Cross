@@ -1,5 +1,6 @@
 package;
 
+import flixel.system.FlxSound;
 import flixel.FlxG;
 import flixel.addons.transition.FlxTransitionSprite.GraphicTransTileSquare;
 import flixel.addons.transition.FlxTransitionableState;
@@ -11,8 +12,19 @@ import io.newgrounds.NG;
 
 class InitState extends FlxTransitionableState
 {
+	public static var mainTheme:FlxSound;
+
 	override public function create():Void
 	{
+		if (FlxG.save.data.winRecord != null)
+		{
+			for (i in 0...4)
+				ArtArrays.winRecord[i] = FlxG.save.data.winRecord[i];
+		}
+		mainTheme = new FlxSound();
+		mainTheme.loadEmbedded(AssetPaths.Pico_Cross_Theme__mp3, true);
+		if (!mainTheme.playing)
+			mainTheme.play(false, ArtArrays.soundTime);
 		super.create();
 		// Transition stuff
 		// FlxTransitionableState.defaultTransIn = new TransitionData(TILES, FlxColor.fromString("#10121c"), .5, FlxPoint.get(1, -1));
@@ -25,7 +37,7 @@ class InitState extends FlxTransitionableState
 
 		// NG stuff
 		NGio.noLogin(APIcodes.APPID);
-		// var ng:NGio = new NGio(APIcodes.APPID, APIcodes.ENCRYPT);
+		var ng:NGio = new NGio(APIcodes.APPID, APIcodes.ENCRYPT);
 		trace('NEWGROUNDS LOL');
 
 		// Other stuff
